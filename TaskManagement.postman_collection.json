@@ -1,0 +1,152 @@
+{
+  "info": {
+    "name": "Task Management API",
+    "description": "Complete Postman collection for the Task Management API.\n\nSet the `baseUrl` collection variable to `http://localhost:3000` (or your deployed URL).\nAfter login/register, the `token` variable is automatically saved and used by all protected requests.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token",   "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) pm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Alice Smith\",\n  \"email\": \"alice@example.com\",\n  \"password\": \"Secret123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) pm.collectionVariables.set('token', json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice@example.com\",\n  \"password\": \"Secret123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get My Profile",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "request": {
+            "method": "POST",
+            "url": "{{baseUrl}}/api/v1/tasks",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Finish API documentation\",\n  \"description\": \"Write clear README and Postman collection\",\n  \"dueDate\": \"2026-12-31T00:00:00.000Z\",\n  \"status\": \"pending\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get All Tasks",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/tasks?status=pending&sortBy=dueDate&order=asc",
+              "host": ["{{baseUrl}}"],
+              "path": ["api","v1","tasks"],
+              "query": [
+                { "key": "status",  "value": "pending",  "description": "Filter by status: pending | completed" },
+                { "key": "sortBy",  "value": "dueDate",  "description": "Sort field: createdAt | dueDate | title" },
+                { "key": "order",   "value": "asc",      "description": "Sort direction: asc | desc" }
+              ]
+            },
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }]
+          }
+        },
+        {
+          "name": "Get Task by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/tasks/:id",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "variable": [{ "key": "id", "value": "<task_id_here>" }]
+          }
+        },
+        {
+          "name": "Update Task (Partial)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{baseUrl}}/api/v1/tasks/:id",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type",   "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"completed\"\n}"
+            },
+            "variable": [{ "key": "id", "value": "<task_id_here>" }]
+          }
+        },
+        {
+          "name": "Delete Task",
+          "request": {
+            "method": "DELETE",
+            "url": "{{baseUrl}}/api/v1/tasks/:id",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "variable": [{ "key": "id", "value": "<task_id_here>" }]
+          }
+        },
+        {
+          "name": "Access Another User's Task (Should 403)",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/v1/tasks/:id",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "variable": [{ "key": "id", "value": "<other_users_task_id>" }]
+          }
+        }
+      ]
+    }
+  ]
+}
