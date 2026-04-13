@@ -2,27 +2,25 @@ require('dotenv').config();
 const app = require('./app');
 const { connectPostgres } = require('./config/postgres');
 const { connectMongo } = require('./config/mongo');
+const { rehydrateReminders } = require('./services/reminderScheduler');
 const logger = require('./utils/logger');
 
 const PORT = process.env.PORT || 3000;
 
-/**
- * Connects to both databases before starting the HTTP server.
- * If either connection fails, the process exits with a non-zero code
- * so container orchestrators (Docker, k8s) know to restart the pod.
- */
 const startServer = async () => {
   try {
     await connectPostgres();
     await connectMongo();
 
+    // Restore reminders for tasks that survived a server restart
+    await rehydrateReminders();
+
     const server = app.listen(PORT, () => {
       logger.info(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
     });
 
-    // ── Graceful Shutdown ────────────────────────────────────────────────────
     const shutdown = (signal) => {
-      logger.info(`${signal} received. Shutting down gracefully…`);
+      logger.info(`${signal} received. Shutting down gracefully...`);
       server.close(() => {
         logger.info('HTTP server closed.');
         process.exit(0);
@@ -32,7 +30,6 @@ const startServer = async () => {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
 
-    // Catch unhandled promise rejections (e.g., lost DB connection mid-run)
     process.on('unhandledRejection', (err) => {
       logger.error('UNHANDLED REJECTION:', err);
       server.close(() => process.exit(1));

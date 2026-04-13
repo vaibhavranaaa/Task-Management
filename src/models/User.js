@@ -50,9 +50,7 @@ User.prototype.verifyPassword = function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-/**
- * Returns a safe representation (no password) for API responses.
- */
+
 User.prototype.toSafeObject = function () {
   return {
     id: this.id,

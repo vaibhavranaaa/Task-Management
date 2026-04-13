@@ -1,7 +1,4 @@
-/**
- * Custom application error class.
- * Wraps operational errors with HTTP status codes.
- */
+
 class AppError extends Error {
   constructor(message, statusCode) {
     super(message);

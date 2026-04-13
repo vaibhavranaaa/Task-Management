@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-
 const taskSchema = new mongoose.Schema(
   {
     title: {
@@ -27,7 +26,31 @@ const taskSchema = new mongoose.Schema(
       },
       default: 'pending',
     },
-    // Stores the PostgreSQL user UUID — no Mongo join needed
+    // New in v2
+    category: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Category',
+      default: null,
+    },
+    tags: {
+      type: [String],
+      default: [],
+      validate: {
+        validator: (arr) => arr.length <= 20,
+        message: 'A task cannot have more than 20 tags',
+      },
+    },
+    // Tracks when the approaching-due reminder was sent (null = not yet sent)
+    reminderSentAt: {
+      type: Date,
+      default: null,
+    },
+    // Tracks when the completion webhook was successfully delivered
+    webhookSentAt: {
+      type: Date,
+      default: null,
+    },
+    // Stores the PostgreSQL user UUID
     userId: {
       type: String,
       required: [true, 'userId is required'],
@@ -41,8 +64,28 @@ const taskSchema = new mongoose.Schema(
   }
 );
 
-// Compound index: speeds up "find all tasks for a user" queries
+// Normalise tags to lowercase before saving
+taskSchema.pre('save', function (next) {
+  if (this.isModified('tags')) {
+    this.tags = [...new Set(this.tags.map((t) => t.toLowerCase().trim()))];
+  }
+  next();
+});
+
+taskSchema.pre('findOneAndUpdate', function (next) {
+  const update = this.getUpdate();
+  if (update.$set && update.$set.tags) {
+    update.$set.tags = [...new Set(update.$set.tags.map((t) => t.toLowerCase().trim()))];
+  }
+  next();
+});
+
+// Compound indexes for common query patterns
 taskSchema.index({ userId: 1, createdAt: -1 });
+taskSchema.index({ userId: 1, status: 1 });
+taskSchema.index({ userId: 1, category: 1 });
+taskSchema.index({ userId: 1, tags: 1 });
+taskSchema.index({ status: 1, dueDate: 1, reminderSentAt: 1 });
 
 const Task = mongoose.model('Task', taskSchema);
 

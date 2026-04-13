@@ -21,7 +21,7 @@ const sequelize = new Sequelize(
 
 const connectPostgres = async () => {
   await sequelize.authenticate();
-  // sync({ alter: true }) safely updates schema without dropping data
+
   await sequelize.sync({ alter: true });
   logger.info('✅ PostgreSQL connected and synced');
 };

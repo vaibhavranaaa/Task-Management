@@ -14,7 +14,6 @@ const signToken = (userId) =>
   });
 
 /**
- * POST /api/v1/auth/register
  * Creates a new user account. Password is hashed by the User model hook.
  */
 const register = catchAsync(async (req, res) => {
@@ -31,21 +30,17 @@ const register = catchAsync(async (req, res) => {
 });
 
 /**
- * POST /api/v1/auth/login
  * Authenticates a user and returns a JWT.
  */
 const login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Find user (include password field for comparison)
   const user = await User.findOne({ where: { email } });
 
-  // Use constant-time comparison to prevent timing attacks
-  // (always call verifyPassword even if user not found, then fail)
   const passwordMatch = user ? await user.verifyPassword(password) : false;
 
   if (!user || !passwordMatch) {
-    // Generic message prevents user enumeration
+
     return next(new AppError('Invalid email or password.', 401));
   }
 
@@ -59,7 +54,6 @@ const login = catchAsync(async (req, res, next) => {
 });
 
 /**
- * GET /api/v1/auth/me
  * Returns the authenticated user's profile. Requires protect middleware.
  */
 const getMe = catchAsync(async (req, res) => {
